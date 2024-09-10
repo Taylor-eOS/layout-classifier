@@ -3,7 +3,8 @@
 ### Overview
 
 This project is a simple educational experiment for learning machine learning concepts. It **extracts and classifies text blocks** from PDF documents based on their geometric and linguistic features. The program processes individual blocks of text, such as headers, body text, and footnotes, and uses machine learning techniques to predict the type of text. The project is designed to assist in the automated analysis of PDF documents by leveraging both textual and structural features.
-It is currently a work in progress.
+
+The project is currently a work in progress.
 
 ### Key Features
 
@@ -24,12 +25,18 @@ It is currently a work in progress.
 
 ### Use Cases
 
+- **Education**: 
+  The main aim is to serve as a vehicle for experienceing machine learning concepts on practical, functional examples.
+  
 - **Document Structure Analysis**: 
   Automatically determine the structure of a PDF by classifying text blocks, which can be useful in document indexing, content extraction, or conversion processes.
   
 - **Text-Type Differentiation**: 
   The system differentiates between various types of text, such as footnotes, body text, and headers, by analyzing geometric and linguistic characteristics.
 
+- **Text Extracton**: 
+  Potentially the tool can be used to  extract text from documents, or in combination with other tools like OCR:
+  
 - **Training Machine Learning Models**: 
   The project serves as a foundation for developing more robust document classification models by continuously retraining on user-labeled data.
 
