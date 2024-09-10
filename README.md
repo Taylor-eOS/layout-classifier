@@ -38,10 +38,8 @@ The project is currently a work in progress, and does not posess the ability to 
   The system differentiates between various types of text, such as footnotes, body text, and headers, by analyzing geometric and linguistic characteristics.
 
 - **Text Extracton**: 
-  Potentially the tool can be used to  extract text from documents, or in combination with other tools like OCR:
+  Potentially the tool can be used to selectively extract text from documents, for instance as a processing step in combination with other tools like OCR.
   
-- **Training Machine Learning Models**: 
-  The project serves as a foundation for developing more robust document classification models by continuously retraining on user-labeled data.
 
 ### Technology
 
@@ -49,4 +47,3 @@ The project is currently a work in progress, and does not posess the ability to 
 - **TensorFlow**: Used to build and train the text classification model.
 - **Scikit-learn**: For standardizing input features using the `StandardScaler`.
 - **GUI**: Provides a simple interface for user input and model validation during document analysis.
-- **CSV**: Outputs detailed feature data for each text block for further analysis.
