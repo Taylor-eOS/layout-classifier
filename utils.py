@@ -7,21 +7,22 @@ import threading
 
 def create_model():
     model = tf.keras.Sequential([
-        layers.Dense(64, activation='relu', input_shape=(14,)),
+        layers.Dense(128, activation='relu', input_shape=(15,)),
+        layers.Dense(64, activation='relu'),
         layers.Dense(32, activation='relu'),
         layers.Dense(4, activation='softmax')
     ])
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
     return model
 
-def extract_block_features(block, last_correct_type):
+def extract_block_features(block):
     features = [
         block["height"], block["width"], block["position"], block["letter_count"], block["font_size"],
         block["num_lines"], block["punctuation_proportion"], block["average_word_length"],
         block["average_words_per_sentence"], block["starts_with_number"], block["capitalization_proportion"],
-        block["average_word_commonality"], block["block_number_on_page"]
+        block["average_word_commonality"], block["block_number_on_page"], block["squared_entropy_value"],
+        block["lexical_density_value"]
     ]
-    features.append(last_correct_type)
     return features
 
 def save_weights(model, file_path):
@@ -39,7 +40,7 @@ def write_features(file_path, block_features):
                 "num_lines", "punctuation_proportion", "average_word_length", 
                 "average_words_per_sentence", "starts_with_number", 
                 "capitalization_proportion", "average_word_commonality", 
-                "block_number_on_page", "last_correct_type"
+                "block_number_on_page", "squared_entropy_value", "lexical_density_value"
             ])
         writer.writerow(block_features)
 

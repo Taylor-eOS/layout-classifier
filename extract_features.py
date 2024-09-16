@@ -1,6 +1,12 @@
-import fitz  #PyMuPDF
+import fitz  
 import string
-from wordfreq import word_frequency #pip install wordfreq
+import spacy
+from math import log2
+from wordfreq import word_frequency
+import numpy as np
+from sklearn.preprocessing import KBinsDiscretizer
+
+nlp = spacy.load("en_core_web_sm")
 
 def extract_geometric_features(pdf_path):
     doc = fitz.open(pdf_path)
@@ -12,8 +18,8 @@ def extract_geometric_features(pdf_path):
 
         for block_no, block in enumerate(blocks):
             x0, y0, x1, y1, text, block_no = block[:6]
-            
-            if text.strip(): #Ignore blocks without text (or only whitespace)
+
+            if text.strip():  
                 height = calculate_height(y0, y1)
                 width = calculate_width(x0, x1)
                 position = calculate_position(y0, page.rect.height)
@@ -28,6 +34,9 @@ def extract_geometric_features(pdf_path):
                 starts_with_number = calculate_starts_with_number(text)
                 capitalization_proportion = calculate_capitalization_proportion(text)
                 average_word_commonality = get_word_commonality(text)
+                entropy_value = calculate_entropy(text)
+                squared_entropy_value = entropy_value ** 2
+                lexical_density_value = calculate_lexical_density(text)
 
                 page_data.append({
                     "x0": x0, "y0": y0, "x1": x1, "y1": y1,
@@ -43,6 +52,8 @@ def extract_geometric_features(pdf_path):
                     "starts_with_number": starts_with_number,
                     "capitalization_proportion": capitalization_proportion,
                     "average_word_commonality": average_word_commonality,
+                    "squared_entropy_value": squared_entropy_value,
+                    "lexical_density_value": lexical_density_value,
                     "block_number_on_page": block_no + 1,
                     "page": page_num
                 })
@@ -73,7 +84,7 @@ def calculate_num_lines(page, block_no):
 
 def calculate_average_word_length(text):
     words = [word.strip(string.punctuation) for word in text.split()]
-    word_lengths = [len(word) if word.isalpha() else 1 for word in words]  #Counts non-alphabetic tokens as 1
+    word_lengths = [len(word) if word.isalpha() else 1 for word in words]  
     return sum(word_lengths) / len(word_lengths) if word_lengths else 0
 
 def calculate_average_words_per_sentence(text):
@@ -83,7 +94,7 @@ def calculate_average_words_per_sentence(text):
 
 def calculate_starts_with_number(text):
     first_char = text.strip()[0]
-    if first_char.isdigit(): #first_char.isalpha()
+    if first_char.isdigit():
         return 1
     else:
         return 0
@@ -102,3 +113,17 @@ def get_word_commonality(text, scale_factor=100):
         return 0.01
     avg_frequency = sum(word_frequencies) / len(word_frequencies)
     return avg_frequency * scale_factor
+
+def calculate_entropy(text):
+    probabilities = [text.count(c) / len(text) for c in set(text)]
+    return -sum(p * log2(p) for p in probabilities)
+
+def calculate_lexical_density(text):
+    doc = nlp(text)
+    total_words = len([token for token in doc if token.is_alpha])
+    content_words = [token for token in doc if token.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}]
+
+    if total_words == 0:
+        return 0
+    return len(content_words) / total_words
+

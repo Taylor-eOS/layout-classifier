@@ -1,5 +1,5 @@
 import pygame
-import fitz  #PyMuPDF
+import fitz
 
 def preload_pdf_page(pdf_path, page_number):
     doc = fitz.open(pdf_path)
