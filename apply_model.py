@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import joblib
-from utils import extract_block_features, create_model, write_to_file, delete_if_exists
+from utils import extract_block_features, create_model, drop_to_file, delete_if_exists
 from extract_features import extract_geometric_features
 
 def apply_model(pdf_path):
@@ -30,7 +30,7 @@ def apply_model(pdf_path):
                 predicted_class = np.argmax(model.predict(normalized_features)[0])
                 predicted_block_type = block_types[predicted_class]
                 print(f"Predicted: {predicted_block_type} - Block {i + 1}, Page {page_number + 1}")
-                write_to_file(block['raw_block'][4], predicted_block_type)
+                drop_to_file(block['raw_block'][4], predicted_block_type)
             except Exception as e:
                 print(f"Error processing block {i+1} on page {page_number + 1}: {e}")
                 continue

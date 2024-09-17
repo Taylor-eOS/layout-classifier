@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 import joblib
 from extract_features import extract_geometric_features
 from gui import show_pdf_page_with_block
-from utils import create_model, extract_block_features, save_weights, write_features, write_to_file, delete_if_exists
+from utils import create_model, extract_block_features, save_weights, write_features, drop_to_file, delete_if_exists
 
 def main(test_mode=False, test_file='test.csv'):
     print("Starting...")
@@ -23,7 +23,6 @@ def main(test_mode=False, test_file='test.csv'):
     delete_if_exists("output.txt")
     for data in features_data:
         pages.setdefault(data['page'], []).append(data)
-        #write_to_file(data['raw_block'][4]) #needs block_type
 
     all_blocks_features = [extract_block_features(block) for blocks in pages.values() for block in blocks]
     scaler = StandardScaler().fit(all_blocks_features)
@@ -54,9 +53,12 @@ def main(test_mode=False, test_file='test.csv'):
             try:
                 block_features = np.array(extract_block_features(block)).reshape(1, -1)
                 normalized_features = scaler.transform(block_features)
-                predicted_class = np.argmax(model.predict(normalized_features)[0])
-                predicted_block_type = block_types[predicted_class]  # **Add this line**
-                print(f"{predicted_block_type} - Block {i + 1}, Page {page_number + 1}")
+                predictions = model.predict(normalized_features)[0]
+                predicted_class = np.argmax(predictions)
+                predicted_block_type = block_types[predicted_class]
+                certainty = predictions[predicted_class]
+        
+                print(f"{predicted_block_type} - Block {i + 1}, Page {page_number + 1}, Certainty: {certainty:.2f}")
 
                 if test_mode:
                     correct_label_line = test_file_reader.readline().strip()
@@ -64,7 +66,6 @@ def main(test_mode=False, test_file='test.csv'):
                         print(f"Error: Ran out of labels at block {total_predictions + 1}")
                         test_file_reader.close()
                         return
-
                     try:
                         correct_label = int(correct_label_line)
                     except ValueError:
@@ -81,7 +82,6 @@ def main(test_mode=False, test_file='test.csv'):
 
                     if correct_label == predicted_class:
                         correct_predictions += 1
-
                     block_label = correct_label
 
                 else:
@@ -90,18 +90,22 @@ def main(test_mode=False, test_file='test.csv'):
                         print("Error: Label could not be determined or is out of range")
                         return
                     block_label = correct_label
+
+                drop_to_file(block['raw_block'][4], block_types[block_label])
                 is_correct = (predicted_class == correct_label)
 
                 block_batch.append(normalized_features[0])
                 y_train = [1 if j == block_label else 0 for j in range(4)]
                 label_batch.append(y_train)
+
                 write_features(
-                csv_file,
-                extract_block_features(block),
-                block_type=block_types[block_label],
-                is_correct=is_correct,
-                predicted_block_type=predicted_block_type
-            )
+                    csv_file,
+                    extract_block_features(block),
+                    block_type=block_types[block_label],
+                    is_correct=is_correct,
+                    predicted_block_type=predicted_block_type,
+                    certainty=certainty
+                )
 
                 if len(block_batch) == 5:
                     block_batch_np = np.array(block_batch)
@@ -137,7 +141,7 @@ def main(test_mode=False, test_file='test.csv'):
 if __name__ == "__main__":
     import sys
     test_mode = '--test' in sys.argv
-    print("Running in test mode..." if test_mode else "Running in normal mode...")
+    print("Running in test mode" if test_mode else "Running in normal mode")
     try:
         main(test_mode=test_mode)
     except Exception as e:
