@@ -2,9 +2,9 @@
 
 ### Overview
 
-This project is a simple educational experiment for practicing machine learning concepts. It **extracts and classifies text blocks** from PDF documents based on their geometric and linguistic features. The program processes individual blocks of text, such as headers, body text, and footnotes, and uses machine learning techniques to predict the type of text. The project is designed to assist in the automated analysis of PDF documents by leveraging both textual and structural features.
+This project is a simple educational experiment for practicing machine learning concepts. It **extracts and classifies text blocks** from PDF documents based on their geometric and linguistic features. The program processes individual blocks of text, such as headers, body text, and footnotes, and uses machine learning techniques to predict the type of text. The project is designed to assist in the automated classification of PDF documents, for instance for conversion into reflowable formats.
 
-The project is currently a work in progress, does posess the ability to apply the model to whole documents, but this requires a fair amount of training data. I'm seeing 100% accurate results after 100 pages of training, which would still save you a quarter of the time if your file is 400 pages long.
+The project is currently a work in progress. It does posess a simple ability to apply previously trained models to documents, but this requires a fair amount of training data to give accurate results. Machine learning is just not good at specificity. I'm seeing 99% accurate results for everything except quotes after about 100 pages of training on a specific file, which would still save you a quarter of the work if your file is 400 pages long.
 
 ### Key Features
 
@@ -46,4 +46,70 @@ The project is currently a work in progress, does posess the ability to apply th
 - **Python**: The core language for feature extraction, text processing, and machine learning.
 - **TensorFlow**: Used to build and train the text classification model.
 - **Scikit-learn**: For standardizing input features using the `StandardScaler`.
-- **GUI**: Provides a simple interface for user input and model validation during document analysis.
+- **Pygame**: Provides a simple interface for user input and model validation during document analysis.
+
+---
+
+## How to Use
+
+### 1. **Project Setup**
+Before running the scripts, make sure you have the necessary dependencies installed. The project uses `PyMuPDF`, `Python 3.8+`, `TensorFlow`, `scikit-learn`, `joblib`, `wordfreq`, `pygame`, `numpy`, `spacy`, and other utilities for PDF processing.
+
+#### **Install Dependencies**
+To install the required dependencies, run `python install_dependencies.py` or check the file import statements.
+
+```bash
+pip install tensorflow scikit-learn joblib numpy PyMuPDF wordfreq pygame spacy
+```
+These lists might be outdated and you can install additional packages as errors demand.
+
+### 2. **Training the Model**
+The training process involves extracting geometric features from a sample PDF file, fitting a neural network model, and saving the model weights for future use.
+
+#### **Step 1: Train the Model**
+To train the model, use the `train_model.py` script. In the GUI, select which type of block each highlighted piece of text is. The script processes a PDF, extracts text block features, trains the model, and saves both the model weights and scaler for future inference.
+```bash
+python train_model.py
+```
+
+Remane the `save.weights.h5` to `load.weights.h5` for it to get loaded at the launch.
+
+- **Inputs:** A sample PDF (`input.pdf`) that will be processed for training.
+- **Outputs:** 
+  - `save.weights.h5`: The trained model weights.
+  - `scaler.save`: The scaler used to normalize the feature data.
+  - `block_features.csv`: A CSV file containing the extracted features and classification labels for each block.
+  
+### 3. **Applying the Model to New PDFs**
+After the model has been trained, you can apply it to classify text blocks in new PDF files.
+
+#### **Step 2: Apply the Model to a New PDF**
+To classify text blocks in a new PDF file, use the `apply_model.py` script. This script loads the saved model you created and the scaler, processes a new PDF file, and outputs the text blocks with predicted classifications. To achieve good results, the model had to be trained on the specific layout you use it on or a diverse enough dataset to generalize the features.
+
+- **Inputs:** 
+  - A new PDF file (`pdf_path`) that you want to classify.
+  - The model weights (`save.weights.h5`) and scaler (`scaler.save`), which should have been saved during training.
+- **Outputs:** 
+  - `output.txt`: A text file containing the extracted blocks, annotated with tags (`<h1>`, `<body>`, `<footer>`, `<blockquote>`) based on the predicted classification for each block.
+
+### 4. **Test Mode (Optional)**
+You can test the model using a predefined set of labels by passing the `--test` flag to the `train_model.py` script. This allows you to evaluate the model’s performance on a specific dataset.
+```bash
+python train_model.py --test
+```
+
+- **Inputs:** 
+  - A CSV file (`test.csv`) with the correct labels for each block in numerical format (0-3).
+- **Outputs:** 
+  - Some performance metrics printed to the console.
+
+### 5. **Additional Files**
+- **`extract_features.py`:** Contains functions to extract geometric and textual features from each block in the PDF.
+- **`gui.py`:** A utility to display PDFs with block highlights, useful for manual classification or review.
+- **`utils.py`:** A collection of utility functions, including `create_model()`, `save_weights()`, `extract_block_features()`, and `write_to_file()`.
+
+### 6. **Important Notes**
+- Everything is a bit preliminary and manual. Files have to be named the way they are addressed in the script, and customization largely happens internally.
+- The output tags in the `output.txt` file can be customized in the `write_to_file()` function if different HTML-like formatting is required.
+- To fine-tune the model, adjust the architecture in the `create_model()` function in `utils.py`.
+- Ensure that the sample PDF used for training is representative of the type of documents you intend to classify.
