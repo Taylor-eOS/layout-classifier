@@ -2,9 +2,10 @@ import os
 import numpy as np
 import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
+import joblib
 from extract_features import extract_geometric_features
 from gui import show_pdf_page_with_block
-from utils import create_model, extract_block_features, save_weights, write_features, write_to_file
+from utils import create_model, extract_block_features, save_weights, write_features, write_to_file, delete_if_exists
 
 def main(test_mode=False, test_file='test.csv'):
     print("Starting...")
@@ -18,16 +19,15 @@ def main(test_mode=False, test_file='test.csv'):
 
     pages = {}
     csv_file = "block_features.csv"
-    if os.path.exists(csv_file):
-        os.remove(csv_file)
-    if os.path.exists("output.txt"):
-        os.remove("output.txt")
+    delete_if_exists(csv_file)
+    delete_if_exists("output.txt")
     for data in features_data:
         pages.setdefault(data['page'], []).append(data)
-        write_to_file(data['raw_block'][4])
+        #write_to_file(data['raw_block'][4]) #needs block_type
 
     all_blocks_features = [extract_block_features(block) for blocks in pages.values() for block in blocks]
     scaler = StandardScaler().fit(all_blocks_features)
+    joblib.dump(scaler, 'scaler.save')
     block_batch = []
     label_batch = []
 

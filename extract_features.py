@@ -5,7 +5,6 @@ import spacy
 import numpy as np
 from wordfreq import word_frequency
 from sklearn.preprocessing import KBinsDiscretizer
-
 nlp = spacy.load("en_core_web_sm")
 
 def extract_geometric_features(pdf_path):

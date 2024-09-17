@@ -58,7 +58,20 @@ def write_features(file_path, block_features, block_type=None, is_correct=None, 
             row.append('')
         writer.writerow(row)
 
-def write_to_file(block_text):
-    with open("output.txt", "a") as file:
-        file.write(f"{block_text}\n\n")
+def write_to_file(block_text, block_type):
+    with open("output.txt", "a", encoding='utf-8') as file:
+        if block_type == 'Header':
+            file.write(f"<h1>{block_text}</h1>\n\n")
+        elif block_type == 'Body':
+            file.write(f"<body>{block_text}</body>\n\n")
+        elif block_type == 'Footer':
+            file.write(f"<footer>{block_text}</footer>\n\n")
+        elif block_type == 'Quote':
+            file.write(f"<blockquote>{block_text}</blockquote>\n\n")
+        else:
+            file.write(f"{block_text}\n\n")
+
+def delete_if_exists(del_file):
+    if os.path.exists(del_file):
+        os.remove(del_file)
 
