@@ -16,8 +16,12 @@ def extract_geometric_features(pdf_path):
         page = doc.load_page(page_num)
         blocks = page.get_text("blocks")
 
-        for block_no, block in enumerate(blocks):
-            x0, y0, x1, y1, text, block_no = block[:6]
+        for idx, block in enumerate(blocks):
+            if len(block) < 6:
+                print(f"Warning: Block at index {idx} on page {page_num + 1} is incomplete. Skipping.")
+                continue
+
+            x0, y0, x1, y1, text, block_id = block[:6]
 
             if text.strip():  
                 height = calculate_height(y0, y1)
@@ -27,8 +31,8 @@ def extract_geometric_features(pdf_path):
                 punctuation_count = calculate_punctuation_count(text)
                 total_characters = len(text)
                 punctuation_proportion = punctuation_count / total_characters if total_characters > 0 else 0
-                average_font_size = calculate_average_font_size(page, block_no)
-                num_lines = calculate_num_lines(page, block_no)
+                average_font_size = calculate_average_font_size(page, idx)
+                num_lines = calculate_num_lines(page, idx)
                 average_word_length = calculate_average_word_length(text)
                 average_words_per_sentence = calculate_average_words_per_sentence(text)
                 starts_with_number = calculate_starts_with_number(text)
@@ -54,8 +58,9 @@ def extract_geometric_features(pdf_path):
                     "average_word_commonality": average_word_commonality,
                     "squared_entropy_value": squared_entropy_value,
                     "lexical_density_value": lexical_density_value,
-                    "block_number_on_page": block_no + 1,
-                    "page": page_num
+                    "block_number_on_page": idx + 1,
+                    "page": page_num,
+                    "raw_block": block
                 })
     return page_data
 
@@ -74,13 +79,31 @@ def calculate_letter_count(text):
 def calculate_punctuation_count(text):
     return sum(1 for c in text if c in '.,;:!?/—1234567890"()-')
 
-def calculate_average_font_size(page, block_no):
-    spans = page.get_text("dict")["blocks"][block_no]["lines"][0]["spans"]
-    font_sizes = [span["size"] for span in spans]
-    return sum(font_sizes) / len(font_sizes) if font_sizes else 0
+def calculate_average_font_size(page, block_index):
+    blocks_dict = page.get_text("dict").get("blocks", [])
+    if block_index < 0 or block_index >= len(blocks_dict):
+        return 0
+    block = blocks_dict[block_index]
+    lines = block.get("lines", [])
+    if not lines:
+        return None
+    font_sizes = []
+    for line in lines:
+        spans = line.get("spans", [])
+        for span in spans:
+            if "size" in span:
+                font_sizes.append(span["size"])
+    return sum(font_sizes) / len(font_sizes) if font_sizes else None
 
-def calculate_num_lines(page, block_no):
-    return len(page.get_text("dict")["blocks"][block_no]["lines"])
+def calculate_num_lines(page, block_index):
+    blocks_dict = page.get_text("dict").get("blocks", [])
+    if block_index < 0 or block_index >= len(blocks_dict):
+        return 0
+    block = blocks_dict[block_index]
+    lines = block.get("lines", [])
+    if not lines:
+        return 0
+    return len(lines)
 
 def calculate_average_word_length(text):
     words = [word.strip(string.punctuation) for word in text.split()]
@@ -93,11 +116,11 @@ def calculate_average_words_per_sentence(text):
     return sum(sentence_lengths) / len(sentence_lengths) if sentence_lengths else 0
 
 def calculate_starts_with_number(text):
-    first_char = text.strip()[0]
-    if first_char.isdigit():
-        return 1
-    else:
+    stripped_text = text.strip()
+    if not stripped_text:
         return 0
+    first_char = stripped_text[0]
+    return 1 if first_char.isdigit() else 0
 
 def calculate_capitalization_proportion(text):
     letter_count = sum(1 for c in text if c.isalpha())
@@ -115,8 +138,10 @@ def get_word_commonality(text, scale_factor=100):
     return avg_frequency * scale_factor
 
 def calculate_entropy(text):
+    if not text:
+        return 0
     probabilities = [text.count(c) / len(text) for c in set(text)]
-    return -sum(p * log2(p) for p in probabilities)
+    return -sum(p * log2(p) for p in probabilities if p > 0)
 
 def calculate_lexical_density(text):
     doc = nlp(text)

@@ -3,7 +3,6 @@ import os
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
-import threading
 
 def create_model():
     model = tf.keras.Sequential([
@@ -26,11 +25,9 @@ def extract_block_features(block):
     return features
 
 def save_weights(model, file_path):
-    def save_task():
-        model.save_weights(file_path, overwrite=True)
-    threading.Thread(target=save_task).start()
+    model.save_weights(file_path, overwrite=True)
 
-def write_features(file_path, block_features):
+def write_features(file_path, block_features, block_type=None):
     file_exists = os.path.isfile(file_path)
     with open(file_path, mode='a', newline='') as file:
         writer = csv.writer(file)
@@ -40,7 +37,11 @@ def write_features(file_path, block_features):
                 "num_lines", "punctuation_proportion", "average_word_length", 
                 "average_words_per_sentence", "starts_with_number", 
                 "capitalization_proportion", "average_word_commonality", 
-                "block_number_on_page", "squared_entropy_value", "lexical_density_value"
+                "block_number_on_page", "squared_entropy_value", "lexical_density_value",
+                "block_type"
             ])
-        writer.writerow(block_features)
+        row = block_features.copy()
+        if block_type is not None:
+            row.append(block_type)
+        writer.writerow(row)
 
