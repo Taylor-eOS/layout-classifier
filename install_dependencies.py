@@ -10,8 +10,7 @@ packages = {
     "tensorflow": "tensorflow",
     "sklearn": "scikit-learn",
     "spacy": "spacy",
-    #"torch": "torch",
-    #"transformers": "transformers",
+    "joblib": "joblib",
 }
 
 for module_name, package_name in packages.items():
