@@ -99,7 +99,7 @@ python train_model.py --test
 ```
 
 - **Inputs:** 
-  - A CSV file (`test.csv`) with the correct labels for each block in numerical format (0-3).
+  - A CSV file (`test.csv`) with the correct labels for each block in numerical format (0-3), one block per line.
 - **Outputs:** 
   - Some performance metrics printed to the console.
 
@@ -113,3 +113,25 @@ python train_model.py --test
 - The output tags in the `output.txt` file can be customized in the `write_to_file()` function if different HTML-like formatting is required.
 - To fine-tune the model, adjust the architecture in the `create_model()` function in `utils.py`.
 - Ensure that the sample PDF used for training is representative of the type of documents you intend to classify.
+
+---
+
+**Feature wish list:**
+Figure out whether some features are counter-productive and might need to be removed: Average Word Length, Average Word Commonality, Block Number on Page, Lexical Density Value, Squared Entropy Value
+Add a 5th 'Formula' block type
+Handle images as a 6th type and them to a folder for later use
+Handle messy PDF blocks that do not have all elements correctly
+Possible additional features: Amount of blocks on that page feature
+Test out layer depth and amount
+Test amount of neurons
+Test other neural net variables (optimizer, loss function, metric)
+Other activation functions: leaky_relu, elu, tanh, swish
+Make GUI respond to keyboard presses
+Ask user what teh right answer is if prediction probability is low
+Scale per batch?
+Make the GUI window not reopen on each click
+Size GUI window more appropriately
+Skip button for bad blocks
+Undo button
+Optimize batch size
+Optimize learning rate depending on application
