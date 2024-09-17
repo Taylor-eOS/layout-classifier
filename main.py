@@ -5,27 +5,30 @@ from sklearn.preprocessing import StandardScaler
 from extract_features import extract_geometric_features
 from gui import show_pdf_page_with_block
 from utils import create_model, extract_block_features, save_weights, write_features
+from file_writing import write_to_file
 
 def main(test_mode=False, test_file='test.csv'):
-    print("Started")
+    print("Starting...")
     pdf_path = "input.pdf"
     features_data = extract_geometric_features(pdf_path)
     model = create_model()
     input_weights_file = 'load.weights.h5'
     if os.path.exists(input_weights_file):
         model.load_weights(input_weights_file)
-    pages = {}
+        print(f"Loading weights from file!")
 
+    pages = {}
     csv_file = "block_features.csv"
     if os.path.exists(csv_file):
         os.remove(csv_file)
-
+    if os.path.exists("output.txt"):
+        os.remove("output.txt")
     for data in features_data:
         pages.setdefault(data['page'], []).append(data)
+        write_to_file(data['raw_block'][4])
 
     all_blocks_features = [extract_block_features(block) for blocks in pages.values() for block in blocks]
     scaler = StandardScaler().fit(all_blocks_features)
-
     block_batch = []
     label_batch = []
 
@@ -43,7 +46,7 @@ def main(test_mode=False, test_file='test.csv'):
     block_types = ['Header', 'Body', 'Footer', 'Quote']
 
     for page_number, page_blocks in pages.items():
-        print(f"Processing Page {page_number + 1} with {len(page_blocks)} blocks")
+        print(f"Page {page_number + 1} with {len(page_blocks)} blocks")
         total_blocks += len(page_blocks)
 
         for i, block in enumerate(page_blocks):
@@ -54,24 +57,24 @@ def main(test_mode=False, test_file='test.csv'):
                 block_features = np.array(extract_block_features(block)).reshape(1, -1)
                 normalized_features = scaler.transform(block_features)
                 predicted_class = np.argmax(model.predict(normalized_features)[0])
-                print(f"Predicted: {block_types[predicted_class]}. Block {i + 1}, Page {page_number + 1}")
+                print(f"{block_types[predicted_class]} - Block {i + 1}, Page {page_number + 1}")
 
                 if test_mode:
                     correct_label_line = test_file_reader.readline().strip()
                     if not correct_label_line:
-                        print(f"Error: Ran out of labels in {test_file} at block {total_predictions + 1}.")
+                        print(f"Error: Ran out of labels at block {total_predictions + 1}")
                         test_file_reader.close()
                         return
 
                     try:
                         correct_label = int(correct_label_line)
                     except ValueError:
-                        print(f"Error: Non-integer label '{correct_label_line}' at block {total_predictions + 1}.")
+                        print(f"Error: Non-integer label '{correct_label_line}' at block {total_predictions + 1}")
                         test_file_reader.close()
                         return
 
                     if correct_label < 0 or correct_label > 3:
-                        print(f"Error: Invalid label {correct_label} at block {total_predictions + 1}. Must be between 0 and 3.")
+                        print(f"Error: Invalid label {correct_label} at block {total_predictions + 1}")
                         test_file_reader.close()
                         return
 
@@ -86,29 +89,27 @@ def main(test_mode=False, test_file='test.csv'):
                 else:
                     correct_label = show_pdf_page_with_block(pdf_path, block, predicted_class, page_number)
                     if correct_label is None or correct_label not in [0, 1, 2, 3]:
-                        print("Error: Label could not be determined or is out of range. Please ensure labeling is completed for all blocks.")
+                        print("Error: Label could not be determined or is out of range")
                         return
                     block_label = correct_label
 
                 block_batch.append(normalized_features[0])
                 y_train = [1 if j == block_label else 0 for j in range(4)]
                 label_batch.append(y_train)
-
                 write_features(csv_file, extract_block_features(block), block_type=block_types[block_label])
 
                 if len(block_batch) == 5:
                     block_batch_np = np.array(block_batch)
                     label_batch_np = np.array(label_batch)
-
                     if len(block_batch_np) == len(label_batch_np):
                         model.fit(block_batch_np, label_batch_np, epochs=1)
-                        save_weights(model, 'save.weights.h5')
-
+                        if not test_mode:
+                            save_weights(model, 'save.weights.h5')
                     block_batch = []
                     label_batch = []
 
             except Exception as e:
-                print(f"An error occurred while processing block {i+1} on page {page_number + 1}: {e}")
+                print(f"Error while processing block {i+1} on page {page_number + 1}: {e}")
                 if test_mode:
                     test_file_reader.close()
                 return
@@ -117,9 +118,9 @@ def main(test_mode=False, test_file='test.csv'):
         block_batch_np = np.array(block_batch)
         label_batch_np = np.array(label_batch)
         model.fit(block_batch_np, label_batch_np, epochs=1)
-        save_weights(model, 'save.weights.h5')
 
     if test_mode:
+        save_weights(model, 'save.weights.h5')
         print(f"Total blocks processed: {total_blocks}")
         if total_predictions > 0:
             accuracy = (correct_predictions / total_predictions) * 100

@@ -1,9 +1,9 @@
-import fitz  
 import string
-import spacy
 from math import log2
-from wordfreq import word_frequency
+import fitz
+import spacy
 import numpy as np
+from wordfreq import word_frequency
 from sklearn.preprocessing import KBinsDiscretizer
 
 nlp = spacy.load("en_core_web_sm")
@@ -11,7 +11,6 @@ nlp = spacy.load("en_core_web_sm")
 def extract_geometric_features(pdf_path):
     doc = fitz.open(pdf_path)
     page_data = []
-
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
         blocks = page.get_text("blocks")
@@ -19,7 +18,7 @@ def extract_geometric_features(pdf_path):
         for idx, block in enumerate(blocks):
             if len(block) < 6:
                 print(f"Warning: Block at index {idx} on page {page_num + 1} is incomplete. Skipping.")
-                continue
+                #continue
 
             x0, y0, x1, y1, text, block_id = block[:6]
 
@@ -28,7 +27,7 @@ def extract_geometric_features(pdf_path):
                 width = calculate_width(x0, x1)
                 position = calculate_position(y0, page.rect.height)
                 letter_count = calculate_letter_count(text)
-                punctuation_count = calculate_punctuation_count(text)
+                punctuation_count = calculate_non_latin_proportion(text)
                 total_characters = len(text)
                 punctuation_proportion = punctuation_count / total_characters if total_characters > 0 else 0
                 average_font_size = calculate_average_font_size(page, idx)
@@ -39,8 +38,8 @@ def extract_geometric_features(pdf_path):
                 capitalization_proportion = calculate_capitalization_proportion(text)
                 average_word_commonality = get_word_commonality(text)
                 entropy_value = calculate_entropy(text)
-                squared_entropy_value = entropy_value ** 2
-                lexical_density_value = calculate_lexical_density(text)
+                squared_entropy = entropy_value ** 2
+                lexical_density = calculate_lexical_density(text)
 
                 page_data.append({
                     "x0": x0, "y0": y0, "x1": x1, "y1": y1,
@@ -56,8 +55,8 @@ def extract_geometric_features(pdf_path):
                     "starts_with_number": starts_with_number,
                     "capitalization_proportion": capitalization_proportion,
                     "average_word_commonality": average_word_commonality,
-                    "squared_entropy_value": squared_entropy_value,
-                    "lexical_density_value": lexical_density_value,
+                    "squared_entropy": squared_entropy,
+                    "lexical_density": lexical_density,
                     "block_number_on_page": idx + 1,
                     "page": page_num,
                     "raw_block": block
@@ -76,8 +75,20 @@ def calculate_position(y0, page_height):
 def calculate_letter_count(text):
     return sum(c.isalpha() for c in text)
 
-def calculate_punctuation_count(text):
-    return sum(1 for c in text if c in '.,;:!?/—1234567890"()-')
+def calculate_non_latin_proportion(text):
+    if not isinstance(text, str):
+        try:
+            text = ''.join(text)
+        except TypeError:
+            warnings.warn("Input is neither a string nor an iterable of strings. Returning 0.", UserWarning)
+            return 0
+    latin_letters = set(string.ascii_letters)
+    non_latin_count = sum(1 for c in text if c not in latin_letters)
+    total_characters = len(text)
+    if total_characters == 0:
+        return 0
+    proportion = non_latin_count / total_characters
+    return cap_at_one(proportion)
 
 def calculate_average_font_size(page, block_index):
     blocks_dict = page.get_text("dict").get("blocks", [])
@@ -147,8 +158,15 @@ def calculate_lexical_density(text):
     doc = nlp(text)
     total_words = len([token for token in doc if token.is_alpha])
     content_words = [token for token in doc if token.pos_ in {"NOUN", "VERB", "ADJ", "ADV"}]
-
     if total_words == 0:
         return 0
-    return len(content_words) / total_words
+    densi = len(content_words) / total_words
+    return cap_at_one(densi)
+
+def cap_at_one(value):
+    if isinstance(value, (int, float)):
+        return min(1, value)
+    else:
+        warnings.warn("Unrecognized number format. Returning 0.", UserWarning)
+        return 0
 
