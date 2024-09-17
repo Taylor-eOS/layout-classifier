@@ -4,8 +4,7 @@ import tensorflow as tf
 from sklearn.preprocessing import StandardScaler
 from extract_features import extract_geometric_features
 from gui import show_pdf_page_with_block
-from utils import create_model, extract_block_features, save_weights, write_features
-from file_writing import write_to_file
+from utils import create_model, extract_block_features, save_weights, write_features, write_to_file
 
 def main(test_mode=False, test_file='test.csv'):
     print("Starting...")
@@ -52,12 +51,12 @@ def main(test_mode=False, test_file='test.csv'):
         for i, block in enumerate(page_blocks):
             if block.get('num_lines', 0) <= 0:
                 continue
-
             try:
                 block_features = np.array(extract_block_features(block)).reshape(1, -1)
                 normalized_features = scaler.transform(block_features)
                 predicted_class = np.argmax(model.predict(normalized_features)[0])
-                print(f"{block_types[predicted_class]} - Block {i + 1}, Page {page_number + 1}")
+                predicted_block_type = block_types[predicted_class]  # **Add this line**
+                print(f"{predicted_block_type} - Block {i + 1}, Page {page_number + 1}")
 
                 if test_mode:
                     correct_label_line = test_file_reader.readline().strip()
@@ -78,7 +77,6 @@ def main(test_mode=False, test_file='test.csv'):
                         test_file_reader.close()
                         return
 
-                    print(f"Correct label from test file: {correct_label}")
                     total_predictions += 1
 
                     if correct_label == predicted_class:
@@ -92,11 +90,18 @@ def main(test_mode=False, test_file='test.csv'):
                         print("Error: Label could not be determined or is out of range")
                         return
                     block_label = correct_label
+                is_correct = (predicted_class == correct_label)
 
                 block_batch.append(normalized_features[0])
                 y_train = [1 if j == block_label else 0 for j in range(4)]
                 label_batch.append(y_train)
-                write_features(csv_file, extract_block_features(block), block_type=block_types[block_label])
+                write_features(
+                csv_file,
+                extract_block_features(block),
+                block_type=block_types[block_label],
+                is_correct=is_correct,
+                predicted_block_type=predicted_block_type
+            )
 
                 if len(block_batch) == 5:
                     block_batch_np = np.array(block_batch)

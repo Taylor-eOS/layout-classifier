@@ -30,7 +30,7 @@ def save_weights(model, file_path):
         model.save_weights(file_path, overwrite=True)
     threading.Thread(target=save_task).start()
 
-def write_features(file_path, block_features, block_type=None):
+def write_features(file_path, block_features, block_type=None, is_correct=None, predicted_block_type=None):
     file_exists = os.path.isfile(file_path)
     with open(file_path, mode='a', newline='') as file:
         writer = csv.writer(file)
@@ -41,10 +41,24 @@ def write_features(file_path, block_features, block_type=None):
                 "average_words_per_sentence", "starts_with_number", 
                 "capitalization_proportion", "average_word_commonality", 
                 "block_number_on_page", "squared_entropy", "lexical_density",
-                "block_type"
+                "block_type", "predicted_block_type", "correct_prediction"  # **Updated header**
             ])
         row = block_features.copy()
         if block_type is not None:
             row.append(block_type)
+        else:
+            row.append('')
+        if predicted_block_type is not None:
+            row.append(predicted_block_type)
+        else:
+            row.append('')
+        if is_correct is not None:
+            row.append(is_correct)
+        else:
+            row.append('')
         writer.writerow(row)
+
+def write_to_file(block_text):
+    with open("output.txt", "a") as file:
+        file.write(f"{block_text}\n\n")
 
