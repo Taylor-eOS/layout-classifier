@@ -7,7 +7,7 @@ from tensorflow.keras import layers
 
 def create_model():
     model = tf.keras.Sequential([
-        layers.Dense(128, activation='gelu', input_shape=(15,)),
+        layers.Dense(128, activation='gelu', input_shape=(16,)),
         layers.Dense(64, activation='gelu'),
         layers.Dense(32, activation='gelu'),
         layers.Dense(4, activation='softmax')
@@ -18,7 +18,7 @@ def create_model():
 def extract_block_features(block):
     features = [
         block["height"], block["width"], block["position"], block["letter_count"], block["font_size"],
-        block["num_lines"], block["punctuation_proportion"], block["average_word_length"],
+        block["relative_font_size"], block["num_lines"], block["punctuation_proportion"], block["average_word_length"],
         block["average_words_per_sentence"], block["starts_with_number"], block["capitalization_proportion"],
         block["average_word_commonality"], block["block_number_on_page"], block["squared_entropy"],
         block["lexical_density"]
@@ -36,7 +36,7 @@ def write_features(file_path, block_features, block_type=None, is_correct=None, 
         writer = csv.writer(file)
         if not file_exists:
             writer.writerow([
-                "height", "width", "position", "letter_count", "font_size", 
+                "height", "width", "position", "letter_count", "font_size", "relative_font_size", 
                 "num_lines", "punctuation_proportion", "average_word_length", 
                 "average_words_per_sentence", "starts_with_number", 
                 "capitalization_proportion", "average_word_commonality", 

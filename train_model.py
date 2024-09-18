@@ -23,7 +23,6 @@ def main(test_mode=False, test_file='test.csv'):
     delete_if_exists("output.txt")
     for data in features_data:
         pages.setdefault(data['page'], []).append(data)
-
     all_blocks_features = [extract_block_features(block) for blocks in pages.values() for block in blocks]
     scaler = StandardScaler().fit(all_blocks_features)
     joblib.dump(scaler, 'scaler.save')

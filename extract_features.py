@@ -6,22 +6,23 @@ import numpy as np
 from wordfreq import word_frequency
 from sklearn.preprocessing import KBinsDiscretizer
 nlp = spacy.load("en_core_web_sm")
+from utils import delete_if_exists
 
 def extract_geometric_features(pdf_path):
+    delete_if_exists("readout.txt")
     doc = fitz.open(pdf_path)
     page_data = []
     for page_num in range(len(doc)):
         page = doc.load_page(page_num)
         blocks = page.get_text("blocks")
+        all_relative_font_sizes = calculate_all_relative_font_sizes(page)
 
         for idx, block in enumerate(blocks):
             if len(block) < 6:
-                print(f"Warning: Block at index {idx} on page {page_num + 1} is incomplete. Skipping.")
+                print_to_file(f"Warning: Block at index {idx} on page {page_num + 1} is incomplete")
                 #continue
-
             x0, y0, x1, y1, text, block_id = block[:6]
-
-            if text.strip():  
+            if text.strip():
                 height = calculate_height(y0, y1)
                 width = calculate_width(x0, x1)
                 position = calculate_position(y0, page.rect.height)
@@ -29,7 +30,8 @@ def extract_geometric_features(pdf_path):
                 punctuation_count = calculate_non_latin_proportion(text)
                 total_characters = len(text)
                 punctuation_proportion = punctuation_count / total_characters if total_characters > 0 else 0
-                average_font_size = calculate_average_font_size(page, idx)
+                average_font_size = calculate_average_font_size(page, idx, letter_count)
+                relative_font_size = all_relative_font_sizes[idx]
                 num_lines = calculate_num_lines(page, idx)
                 average_word_length = calculate_average_word_length(text)
                 average_words_per_sentence = calculate_average_words_per_sentence(text)
@@ -47,6 +49,7 @@ def extract_geometric_features(pdf_path):
                     "position": position,
                     "letter_count": letter_count,
                     "font_size": average_font_size,
+                    "relative_font_size": relative_font_size,
                     "num_lines": num_lines,
                     "punctuation_proportion": punctuation_proportion,
                     "average_word_length": average_word_length,
@@ -89,7 +92,7 @@ def calculate_non_latin_proportion(text):
     proportion = non_latin_count / total_characters
     return cap_at_one(proportion)
 
-def calculate_average_font_size(page, block_index):
+def calculate_average_font_size(page, block_index, letter_count):
     blocks_dict = page.get_text("dict").get("blocks", [])
     if block_index < 0 or block_index >= len(blocks_dict):
         return 0
@@ -104,6 +107,18 @@ def calculate_average_font_size(page, block_index):
             if "size" in span:
                 font_sizes.append(span["size"])
     return sum(font_sizes) / len(font_sizes) if font_sizes else None
+
+def calculate_all_relative_font_sizes(page):
+    blocks_dict = page.get_text("dict").get("blocks", [])
+    all_font_sizes = []
+    for idx, block in enumerate(blocks_dict):
+        letter_count = len(block['text']) if 'text' in block else 0
+        avg_font_size = calculate_average_font_size(page, idx, letter_count)
+        if avg_font_size is not None:
+            all_font_sizes.append(avg_font_size)
+    max_font_size = max(all_font_sizes) if all_font_sizes else 1
+    all_relative_font_sizes = [font_size / max_font_size for font_size in all_font_sizes]
+    return all_relative_font_sizes
 
 def calculate_num_lines(page, block_index):
     blocks_dict = page.get_text("dict").get("blocks", [])
@@ -168,4 +183,9 @@ def cap_at_one(value):
     else:
         warnings.warn("Unrecognized number format. Returning 0.", UserWarning)
         return 0
+
+def print_to_file(value):
+    with open("readout.txt", "a", encoding='utf-8') as file:
+            file.write(f"{value}\n")
+            print(f"{value}")
 
