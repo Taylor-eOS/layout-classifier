@@ -39,7 +39,16 @@ def show_pdf_page_with_block(pdf_path, block, predicted_class, page_number):
             pygame.Rect(10, img_height + (button_space_height - 60) // 2, 60, 60),
             pygame.Rect(80, img_height + (button_space_height - 60) // 2, 60, 60),
             pygame.Rect(150, img_height + (button_space_height - 60) // 2, 60, 60),
-            pygame.Rect(220, img_height + (button_space_height - 60) // 2, 60, 60)]
+            pygame.Rect(220, img_height + (button_space_height - 60) // 2, 60, 60)
+        ]
+
+        # Mapping of keys to button indices
+        key_to_index = {
+            pygame.K_h: 0,  # Header
+            pygame.K_b: 1,  # Body
+            pygame.K_f: 2,  # Footer
+            pygame.K_q: 3   # Quote
+        }
 
         selected_idx = None
         running = True
@@ -54,14 +63,25 @@ def show_pdf_page_with_block(pdf_path, block, predicted_class, page_number):
                             selected_idx = idx
                             running = False
 
+                if event.type == pygame.KEYDOWN:
+                    if event.key in key_to_index:
+                        selected_idx = key_to_index[event.key]
+                        running = False
+
             screen.fill((255, 255, 255))
             screen.blit(img, (0, 0))
 
             x0, y0, x1, y1 = [coord * scale_factor for coord in (block['x0'], block['y0'], block['x1'], block['y1'])]
-            pygame.draw.rect(screen, highlight_colors.get(predicted_class, (0, 0, 0)), pygame.Rect(x0, y0, x1 - x0, y1 - y0), 4)
+            pygame.draw.rect(screen, highlight_colors.get(predicted_class, (0, 0, 0)),
+                             pygame.Rect(x0, y0, x1 - x0, y1 - y0), 4)
 
             for idx, button in enumerate(buttons):
-                pygame.draw.rect(screen, (230, 230, 230), button)
+                # Highlight the button if it's selected
+                if selected_idx == idx:
+                    color = (180, 180, 250)  # Highlight color for selected button
+                else:
+                    color = (230, 230, 230)
+                pygame.draw.rect(screen, color, button)
                 text_surface = font.render(button_texts[idx], True, (0, 0, 0))
                 text_rect = text_surface.get_rect(center=button.center)
                 screen.blit(text_surface, text_rect)
