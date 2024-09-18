@@ -30,10 +30,16 @@ def save_weights(model, file_path):
         model.save_weights(file_path, overwrite=True)
     threading.Thread(target=save_task).start()
 
+import os
+import csv
+
+import os
+import csv
+
 def write_features(file_path, block_features, block_type=None, is_correct=None, predicted_block_type=None, certainty=None):
     file_exists = os.path.isfile(file_path)
-    with open(file_path, mode='a', newline='') as file:
-        writer = csv.writer(file)
+    with open(file_path, mode='a', newline='', encoding='utf-8') as file:
+        writer = csv.writer(file, delimiter=',')
         if not file_exists:
             writer.writerow([
                 "height", "width", "position", "letter_count", "font_size", "relative_font_size", 
@@ -41,25 +47,19 @@ def write_features(file_path, block_features, block_type=None, is_correct=None, 
                 "average_words_per_sentence", "starts_with_number", 
                 "capitalization_proportion", "average_word_commonality", 
                 "block_number_on_page", "squared_entropy", "lexical_density",
-                "block_type", "predicted_block_type", "correct_prediction", "certainty"  # Add certainty header
+                "block_type", "predicted_block_type", "correct_prediction", "certainty"
             ])
-        row = block_features.copy()
-        if block_type is not None:
-            row.append(block_type)
-        else:
-            row.append('')
-        if predicted_block_type is not None:
-            row.append(predicted_block_type)
-        else:
-            row.append('')
-        if is_correct is not None:
-            row.append(is_correct)
-        else:
-            row.append('')
-        if certainty is not None:
-            row.append(certainty)
-        else:
-            row.append('')
+        def format_value(value):
+            if isinstance(value, float):
+                return f"{value:.2f}".replace('.', ',')
+            return value
+        formatted_features = [format_value(f) for f in block_features]
+        row = formatted_features + [
+            block_type if block_type is not None else '',
+            predicted_block_type if predicted_block_type is not None else '',
+            is_correct if is_correct is not None else '',
+            format_value(certainty) if certainty is not None else ''
+        ]
         writer.writerow(row)
 
 def drop_to_file(block_text, block_type):

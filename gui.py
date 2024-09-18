@@ -32,7 +32,7 @@ def show_pdf_page_with_block(pdf_path, block, predicted_class, page_number):
             2: (120, 120, 120),
             3: (80, 80, 80)
         }
-        button_texts = ["Header", "Body", "Footer", "Quote"]
+        button_texts = ["Footer", "Body", "Header", "Quote"]
         font = pygame.font.SysFont(None, 24)
 
         buttons = [

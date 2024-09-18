@@ -7,6 +7,8 @@ from wordfreq import word_frequency
 from sklearn.preprocessing import KBinsDiscretizer
 nlp = spacy.load("en_core_web_sm")
 from utils import delete_if_exists
+import statistics
+from collections import Counter
 
 def extract_geometric_features(pdf_path):
     delete_if_exists("readout.txt")
@@ -30,7 +32,7 @@ def extract_geometric_features(pdf_path):
                 punctuation_count = calculate_non_latin_proportion(text)
                 total_characters = len(text)
                 punctuation_proportion = punctuation_count / total_characters if total_characters > 0 else 0
-                average_font_size = calculate_average_font_size(page, idx, letter_count)
+                average_font_size = calculate_average_font_size(page, idx)
                 relative_font_size = all_relative_font_sizes[idx]
                 num_lines = calculate_num_lines(page, idx)
                 average_word_length = calculate_average_word_length(text)
@@ -63,7 +65,7 @@ def extract_geometric_features(pdf_path):
                     "page": page_num,
                     "raw_block": block
                 })
-    return page_data
+    return process_drop_cap(page_data)
 
 def calculate_height(y0, y1):
     return y1 - y0
@@ -92,30 +94,20 @@ def calculate_non_latin_proportion(text):
     proportion = non_latin_count / total_characters
     return cap_at_one(proportion)
 
-def calculate_average_font_size(page, block_index, letter_count):
+def calculate_average_font_size(page, block_index):
     blocks_dict = page.get_text("dict").get("blocks", [])
     if block_index < 0 or block_index >= len(blocks_dict):
         return 0
     block = blocks_dict[block_index]
     lines = block.get("lines", [])
-    if not lines:
-        return None
-    font_sizes = []
-    for line in lines:
-        spans = line.get("spans", [])
-        for span in spans:
-            if "size" in span:
-                font_sizes.append(span["size"])
+    font_sizes = [span["size"] for line in lines for span in line.get("spans", []) if "size" in span]
     return sum(font_sizes) / len(font_sizes) if font_sizes else None
 
 def calculate_all_relative_font_sizes(page):
     blocks_dict = page.get_text("dict").get("blocks", [])
-    all_font_sizes = []
-    for idx, block in enumerate(blocks_dict):
-        letter_count = len(block['text']) if 'text' in block else 0
-        avg_font_size = calculate_average_font_size(page, idx, letter_count)
-        if avg_font_size is not None:
-            all_font_sizes.append(avg_font_size)
+    text_blocks = [block for block in blocks_dict if block.get("type") == 0]  # Assuming type 0 is text
+    all_font_sizes = [calculate_average_font_size(page, idx) for idx in range(len(text_blocks))]
+    all_font_sizes = [size for size in all_font_sizes if size is not None]
     max_font_size = max(all_font_sizes) if all_font_sizes else 1
     all_relative_font_sizes = [font_size / max_font_size for font_size in all_font_sizes]
     return all_relative_font_sizes
@@ -188,4 +180,26 @@ def print_to_file(value):
     with open("readout.txt", "a", encoding='utf-8') as file:
             file.write(f"{value}\n")
             print(f"{value}")
+
+def process_drop_cap(page_data):
+    font_sizes = [block['font_size'] for block in page_data if 'font_size' in block]
+    if not font_sizes:
+        return page_data
+    font_size_counts = Counter(font_sizes)
+    common_font_size, common_count = font_size_counts.most_common(1)[0]
+    average_font_size = np.mean(font_sizes)
+    font_size_std = np.std(font_sizes)
+    threshold = average_font_size + 2 * font_size_std
+    drop_cap_indices = [i for i, block in enumerate(page_data) if block.get('font_size', 0) > threshold and block.get('letter_count', 0) < 10]
+    for i in drop_cap_indices:
+        if i + 1 < len(page_data):
+            next_font_size = page_data[i + 1].get('font_size', common_font_size)
+            page_data[i]['font_size'] = next_font_size
+    all_font_sizes = [block['font_size'] for block in page_data]
+    max_font_size = max(all_font_sizes) if all_font_sizes else 1
+    for block in page_data:
+        if 'font_size' in block:
+            block['relative_font_size'] = block['font_size'] / max_font_size
+    return page_data
+
 
