@@ -54,14 +54,14 @@ def extract_geometric_features(pdf_path):
                     "relative_font_size": relative_font_size,
                     "num_lines": num_lines,
                     "punctuation_proportion": punctuation_proportion,
-                    "average_word_length": average_word_length,
+                    #"average_word_length": average_word_length,
                     "average_words_per_sentence": average_words_per_sentence,
                     "starts_with_number": starts_with_number,
                     "capitalization_proportion": capitalization_proportion,
                     "average_word_commonality": average_word_commonality,
                     "squared_entropy": squared_entropy,
-                    "lexical_density": lexical_density,
-                    "block_number_on_page": idx + 1,
+                    #"lexical_density": lexical_density,
+                    #"block_number_on_page": idx + 1,
                     "page": page_num,
                     "raw_block": block
                 })
