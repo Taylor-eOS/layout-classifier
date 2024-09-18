@@ -1,11 +1,12 @@
 import os
 import numpy as np
 import tensorflow as tf
-from sklearn.preprocessing import StandardScaler
 import joblib
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler
 from extract_features import extract_geometric_features
 from gui import show_pdf_page_with_block
-from utils import create_model, extract_block_features, save_weights, write_features, drop_to_file, delete_if_exists
+from utils import create_model, extract_block_features, save_weights, write_features, drop_to_file, delete_if_exists, features_to_scale, features_to_keep
 
 def main(test_mode=False, test_file='test.csv'):
     print("Starting...")
@@ -24,8 +25,11 @@ def main(test_mode=False, test_file='test.csv'):
     for data in features_data:
         pages.setdefault(data['page'], []).append(data)
     all_blocks_features = [extract_block_features(block) for blocks in pages.values() for block in blocks]
-    scaler = StandardScaler().fit(all_blocks_features)
-    joblib.dump(scaler, 'scaler.save')
+    preprocessor = ColumnTransformer(
+        transformers=[("scale", StandardScaler(), features_to_scale())],
+        remainder="drop")
+    preprocessor.fit(all_blocks_features)
+    joblib.dump(preprocessor, 'preprocessor.save')
     block_batch = []
     label_batch = []
 
@@ -50,8 +54,9 @@ def main(test_mode=False, test_file='test.csv'):
             if block.get('num_lines', 0) <= 0:
                 continue
             try:
-                block_features = np.array(extract_block_features(block)).reshape(1, -1)
-                normalized_features = scaler.transform(block_features)
+                block_features = extract_block_features(block)
+                scaled_features = preprocessor.transform([block_features])[0].astype(np.float32)
+                normalized_features = scaled_features.reshape(1, -1)
                 predictions = model.predict(normalized_features)[0]
                 predicted_class = np.argmax(predictions)
                 predicted_block_type = block_types[predicted_class]
@@ -91,15 +96,15 @@ def main(test_mode=False, test_file='test.csv'):
                     block_label = correct_label
 
                 drop_to_file(block['raw_block'][4], block_types[block_label])
-                is_correct = (predicted_class == correct_label)
+                is_correct = (predicted_class == block_label)
 
-                block_batch.append(normalized_features[0])
+                block_batch.append(scaled_features)
                 y_train = [1 if j == block_label else 0 for j in range(4)]
                 label_batch.append(y_train)
 
                 write_features(
                     csv_file,
-                    extract_block_features(block),
+                    block_features,
                     block_type=block_types[block_label],
                     is_correct=is_correct,
                     predicted_block_type=predicted_block_type,
@@ -107,8 +112,8 @@ def main(test_mode=False, test_file='test.csv'):
                 )
 
                 if len(block_batch) == 5:
-                    block_batch_np = np.array(block_batch)
-                    label_batch_np = np.array(label_batch)
+                    block_batch_np = np.array(block_batch, dtype=np.float32)
+                    label_batch_np = np.array(label_batch, dtype=np.float32)
                     if len(block_batch_np) == len(label_batch_np):
                         model.fit(block_batch_np, label_batch_np, epochs=1)
                         if not test_mode:
@@ -123,9 +128,10 @@ def main(test_mode=False, test_file='test.csv'):
                 return
 
     if block_batch and len(block_batch) == len(label_batch):
-        block_batch_np = np.array(block_batch)
-        label_batch_np = np.array(label_batch)
+        block_batch_np = np.array(block_batch, dtype=np.float32)
+        label_batch_np = np.array(label_batch, dtype=np.float32)
         model.fit(block_batch_np, label_batch_np, epochs=1)
+
 
     if test_mode:
         save_weights(model, 'save.weights.h5')
