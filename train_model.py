@@ -41,7 +41,7 @@ def main(test_mode=False, test_file='test.csv'):
             print(f"Failed to open {test_file}: {e}")
             return
 
-    correct_predictions = 0
+    prediction_corrects = 0
     total_predictions = 0
     total_blocks = 0
     block_types = ['Header', 'Body', 'Footer', 'Quote']
@@ -85,7 +85,7 @@ def main(test_mode=False, test_file='test.csv'):
                     total_predictions += 1
 
                     if correct_label == predicted_class:
-                        correct_predictions += 1
+                        prediction_corrects += 1
                     block_label = correct_label
 
                 else:
@@ -137,7 +137,7 @@ def main(test_mode=False, test_file='test.csv'):
         save_weights(model, 'save.weights.h5')
         print(f"Total blocks processed: {total_blocks}")
         if total_predictions > 0:
-            accuracy = (correct_predictions / total_predictions) * 100
+            accuracy = (prediction_corrects / total_predictions) * 100
             print(f"Test Accuracy: {accuracy:.2f}%")
         else:
             print("No predictions made during the test.")

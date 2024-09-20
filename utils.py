@@ -61,7 +61,7 @@ def write_features(file_path, block_features, block_type=None, is_correct=None, 
                 "squared_entropy",
                 "block_type",
                 "predicted_block_type",
-                "correct_prediction",
+                "prediction_correct",
                 "certainty"
             ])
         def format_value(value):

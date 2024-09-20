@@ -32,7 +32,7 @@ def show_pdf_page_with_block(pdf_path, block, predicted_class, page_number):
             2: (120, 120, 120),
             3: (80, 80, 80)
         }
-        button_texts = ["Footer", "Body", "Header", "Quote"]
+        button_texts = ["Header", "Body", "Footer", "Quote"]
         font = pygame.font.SysFont(None, 24)
 
         buttons = [
@@ -42,12 +42,11 @@ def show_pdf_page_with_block(pdf_path, block, predicted_class, page_number):
             pygame.Rect(220, img_height + (button_space_height - 60) // 2, 60, 60)
         ]
 
-        # Mapping of keys to button indices
         key_to_index = {
-            pygame.K_h: 0,  # Header
-            pygame.K_b: 1,  # Body
-            pygame.K_f: 2,  # Footer
-            pygame.K_q: 3   # Quote
+            pygame.K_1: 0,
+            pygame.K_2: 1,
+            pygame.K_3: 2,
+            pygame.K_4: 3
         }
 
         selected_idx = None
@@ -76,9 +75,8 @@ def show_pdf_page_with_block(pdf_path, block, predicted_class, page_number):
                              pygame.Rect(x0, y0, x1 - x0, y1 - y0), 4)
 
             for idx, button in enumerate(buttons):
-                # Highlight the button if it's selected
                 if selected_idx == idx:
-                    color = (180, 180, 250)  # Highlight color for selected button
+                    color = (180, 180, 250)
                 else:
                     color = (230, 230, 230)
                 pygame.draw.rect(screen, color, button)
