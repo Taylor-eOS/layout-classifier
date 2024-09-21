@@ -43,10 +43,10 @@ def show_pdf_page_with_block(pdf_path, block, predicted_class, page_number):
         ]
 
         key_to_index = {
-            pygame.K_1: 0,
-            pygame.K_2: 1,
-            pygame.K_3: 2,
-            pygame.K_4: 3
+            pygame.K_0: 0,
+            pygame.K_1: 1,
+            pygame.K_2: 2,
+            pygame.K_3: 3
         }
 
         selected_idx = None
