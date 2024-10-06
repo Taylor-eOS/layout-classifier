@@ -1,10 +1,13 @@
 ## Machine Learning Layout Classifier
 
-### Overview
-
 This project is a simple educational experiment for practicing machine learning concepts. It **extracts and classifies text blocks** from PDF documents based on their geometric and linguistic features. The program processes individual blocks of text, such as headers, body text, and footnotes, and uses machine learning techniques to predict the type of text. The project is designed to assist in the automated classification of PDF documents, for instance for conversion into reflowable formats.
 
-The project is currently a work in progress. It does posess a simple ability to apply previously trained models to documents, but this requires a fair amount of training data to give accurate results. Machine learning is just not good at specificity. I'm seeing 99% accurate results for everything except quotes after about 100 pages of training on a specific file, which would still save you a quarter of the work if your file is 400 pages long.
+The project is an abandoned work in progress. Due to its nature as a leaning project, the code is somewhat convoluted and imperfectly implemented. I for instance stuck with an old `pygame` GUI that reopens on each click. The project does work, but if you wanted to use it, you would have to figure out how to adapt the values in the files to your input (which I can't provide due top copyright) and learn what files to use for what task. The classification could be adapted to your needs, as it as such is content-agnostic.
+
+The project does posess a simple ability to create and apply previously trained models to new documents, but it requires a fair amount of training data to give accurate results. Machine learning is just not good at specificity. I'm seeing about 95% accurate results after about 100 pages of training on a specific file, which would still save you a quarter of the work if your file is 400 pages long.
+
+[Here](https://github.com/Taylor-eOS/manual-classifier) is a manual tool to do the same thing with a little more work without inaccuracy.<br>
+[This](https://github.com/Taylor-eOS/gpt-classifier) repository was an attempt to use DistilBERT for the same task, which generally saw worse results.
 
 ### Key Features
 
@@ -31,12 +34,6 @@ The project is currently a work in progress. It does posess a simple ability to 
 - **Education**: 
   The main aim is to serve as a vehicle for experienceing machine learning concepts on practical, functional examples.
   
-- **Document Structure Analysis**: 
-  Automatically determine the structure of a PDF by classifying text blocks, which can be useful in document indexing, content extraction, or conversion processes.
-  
-- **Text-Type Differentiation**: 
-  The system differentiates between various types of text, such as footnotes, body text, and headers, by analyzing geometric and linguistic characteristics.
-
 - **Text Extracton**: 
   Potentially the tool can be used to selectively extract text from documents, for instance as a processing step in combination with other tools like OCR.
   
